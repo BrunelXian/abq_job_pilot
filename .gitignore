@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# Local runtime state
+runtime/*.json
+runtime/*.tmp
+runtime/logs/*
+runtime/reports/*
+!runtime/logs/.gitkeep
+!runtime/reports/.gitkeep
+
+# Local backups
+backups/
+
+# Abaqus output files
+*.odb
+*.sta
+*.msg
+*.dat
+*.log
+*.com
+*.prt
+*.sim
+*.stt
+*.mdl
+*.cax
+*.023
+*.lck
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Local icon source
+abqjobpilot.png
+abqjobpilot.ico
