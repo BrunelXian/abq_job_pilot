@@ -62,20 +62,21 @@ class AgentCommandConsole(tk.Toplevel):
         self.skill_text.configure(state="disabled")
         ttk.Button(skill_frame, text="Copy AI Prompt", command=self.copy_ai_prompt).grid(row=0, column=1, sticky="n")
 
-        input_frame = ttk.LabelFrame(self, text="Paste Commands", padding=8)
+        input_frame = ttk.LabelFrame(self, text="Paste Commands From AI Chat", padding=8)
         input_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 6))
         input_frame.columnconfigure(0, weight=1)
-        input_frame.rowconfigure(0, weight=1)
+        input_frame.rowconfigure(1, weight=1)
+        input_toolbar = ttk.Frame(input_frame)
+        input_toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 6))
+        ttk.Button(input_toolbar, text="Paste", command=self.paste_clipboard).grid(row=0, column=0, padx=(0, 6))
+        ttk.Button(input_toolbar, text="Paste && Run", command=self.paste_and_run).grid(row=0, column=1, padx=(0, 6))
+        ttk.Button(input_toolbar, text="Run Commands", command=self.run_commands).grid(row=0, column=2, padx=(0, 6))
+        ttk.Button(input_toolbar, text="Clear Input", command=self.clear_input).grid(row=0, column=3, padx=(0, 6))
+        ttk.Button(input_toolbar, text="Clear Output", command=self.clear_output).grid(row=0, column=4, padx=(0, 6))
+        ttk.Button(input_toolbar, text="Copy Examples", command=self.copy_examples).grid(row=0, column=5, padx=(0, 6))
         self.input_text = scrolledtext.ScrolledText(input_frame, height=8, wrap="word")
-        self.input_text.grid(row=0, column=0, sticky="nsew")
+        self.input_text.grid(row=1, column=0, sticky="nsew")
         self.input_text.insert("1.0", "help")
-
-        button_frame = ttk.Frame(self, padding=(10, 0, 10, 6))
-        button_frame.grid(row=2, column=0, sticky="ew")
-        ttk.Button(button_frame, text="Run Commands", command=self.run_commands).grid(row=0, column=0, padx=(0, 6))
-        ttk.Button(button_frame, text="Clear Input", command=self.clear_input).grid(row=0, column=1, padx=(0, 6))
-        ttk.Button(button_frame, text="Clear Output", command=self.clear_output).grid(row=0, column=2, padx=(0, 6))
-        ttk.Button(button_frame, text="Copy Examples", command=self.copy_examples).grid(row=0, column=3, padx=(0, 6))
 
         help_frame = ttk.LabelFrame(self, text="Supported Internal Commands", padding=8)
         help_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 6))
@@ -83,7 +84,7 @@ class AgentCommandConsole(tk.Toplevel):
             'enqueue --inp "D:\\path\\Job_xxx.inp" --cpus 14 --gpus 1\n'
             'enqueue-folder --folder "D:\\path\\strategy_folder" --cpus 14 --gpus 1\n'
             "list | help | clear\n"
-            "Multiple commands are supported. One command per line."
+            "Copy AI-generated commands, click Paste, then Run Commands. Multiple commands are supported."
         )
         ttk.Label(help_frame, text=help_text, justify="left").grid(row=0, column=0, sticky="w")
 
@@ -113,6 +114,29 @@ class AgentCommandConsole(tk.Toplevel):
     def copy_ai_prompt(self) -> None:
         self.clipboard_clear()
         self.clipboard_append(AI_SKILL_PROMPT)
+
+    def paste_clipboard(self) -> None:
+        try:
+            text = self.clipboard_get()
+        except tk.TclError:
+            self._append_output("ERROR: clipboard is empty or does not contain text.")
+            return
+        if not text.strip():
+            self._append_output("ERROR: clipboard is empty.")
+            return
+        self.input_text.delete("1.0", "end")
+        self.input_text.insert("1.0", text)
+        commands = extract_agent_commands(text)
+        if commands:
+            self._append_output(f"OK: pasted {len(commands)} supported command(s) from clipboard.")
+        else:
+            self._append_output("WARNING: pasted text, but no supported Agent Command lines were found.")
+
+    def paste_and_run(self) -> None:
+        self.paste_clipboard()
+        pasted_text = self.input_text.get("1.0", "end-1c")
+        if extract_agent_commands(pasted_text):
+            self.run_commands()
 
     def copy_examples(self) -> None:
         self.clipboard_clear()
